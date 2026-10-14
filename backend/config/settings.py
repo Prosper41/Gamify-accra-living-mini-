@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     # Project
     "accounts",
     "players",
+    "jobs",
 ]
 
 

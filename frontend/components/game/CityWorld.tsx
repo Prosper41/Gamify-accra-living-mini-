@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Canvas, useFrame } from "@react-three/fiber";
@@ -6,12 +5,18 @@ import { Text } from "@react-three/drei";
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
-type Position = { x: number; y: number; z: number };
+export type Position = { x: number; y: number; z: number };
 
 type CityWorldProps = {
   initialPosition?: Position;
   onPositionChange?: (position: Position) => void;
+  deliveryDestination?: { x: number; z: number } | null;
+  onInteractionAvailable?: (action: "pickup" | "complete" | null) => void;
+  onInteract?: (action: "pickup" | "complete", position: Position) => void;
 };
+
+const PICKUP = { x: 0, z: 0 };
+const INTERACTION_RADIUS = 3;
 
 const buildings = [
   { x: -16, z: -16, height: 8, color: "#d6a77a" },
@@ -50,16 +55,65 @@ function Building({
   );
 }
 
+function DeliveryMarker({
+  x,
+  z,
+  label,
+  color,
+}: {
+  x: number;
+  z: number;
+  label: string;
+  color: string;
+}) {
+  return (
+    <group position={[x, 0, z]}>
+      <mesh position={[0, 0.12, 0]}>
+        <cylinderGeometry args={[1.2, 1.2, 0.2, 24]} />
+        <meshStandardMaterial color={color} />
+      </mesh>
+
+      <mesh position={[0, 1.1, 0]} castShadow>
+        <boxGeometry args={[1.4, 1.4, 1.4]} />
+        <meshStandardMaterial color={color} />
+      </mesh>
+
+      <Text
+        position={[0, 2.5, 0]}
+        fontSize={0.65}
+        color="#ffffff"
+        anchorX="center"
+        outlineWidth={0.04}
+        outlineColor="#111827"
+      >
+        {label}
+      </Text>
+    </group>
+  );
+}
+
 function Player({
   initialPosition,
   onPositionChange,
-}: {
-  initialPosition: Position;
-  onPositionChange?: (position: Position) => void;
-}) {
+  deliveryDestination,
+  onInteractionAvailable,
+  onInteract,
+}: Required<Pick<CityWorldProps, "initialPosition">> &
+  Omit<CityWorldProps, "initialPosition">) {
   const playerRef = useRef<THREE.Group>(null);
   const keys = useRef<Set<string>>(new Set());
   const lastReport = useRef(0);
+  const availableAction = useRef<"pickup" | "complete" | null>(null);
+
+  const interactionRef = useRef(onInteract);
+  const availableRef = useRef(onInteractionAvailable);
+  const positionRef = useRef(onPositionChange);
+
+  useEffect(() => {
+    interactionRef.current = onInteract;
+    availableRef.current = onInteractionAvailable;
+    positionRef.current = onPositionChange;
+  }, [onInteract, onInteractionAvailable, onPositionChange]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -69,6 +123,19 @@ function Player({
         )
       ) {
         event.preventDefault();
+      }
+
+      if (event.key.toLowerCase() === "e" && !event.repeat) {
+        const player = playerRef.current;
+        const action = availableAction.current;
+
+        if (player && action) {
+          interactionRef.current?.(action, {
+            x: player.position.x,
+            y: 0,
+            z: player.position.z,
+          });
+        }
       }
 
       keys.current.add(event.key.toLowerCase());
@@ -135,24 +202,39 @@ function Player({
     );
 
     state.camera.position.lerp(cameraTarget, 0.06);
-    state.camera.lookAt(
-      player.position.x,
-      1,
-      player.position.z
-    );
+    state.camera.lookAt(player.position.x, 1, player.position.z);
 
     if (
       moving &&
-      onPositionChange &&
+      positionRef.current &&
       state.clock.elapsedTime - lastReport.current > 0.3
     ) {
       lastReport.current = state.clock.elapsedTime;
 
-      onPositionChange({
+      positionRef.current({
         x: player.position.x,
         y: 0,
         z: player.position.z,
       });
+    }
+
+    const target = deliveryDestination ?? PICKUP;
+
+    const distance = Math.hypot(
+      player.position.x - target.x,
+      player.position.z - target.z
+    );
+
+    const action =
+      distance <= INTERACTION_RADIUS
+        ? deliveryDestination
+          ? "complete"
+          : "pickup"
+        : null;
+
+    if (availableAction.current !== action) {
+      availableAction.current = action;
+      availableRef.current?.(action);
     }
   });
 
@@ -178,11 +260,7 @@ function Player({
   );
 }
 
-function CityScene({
-  initialPosition,
-  onPositionChange,
-}: Required<Pick<CityWorldProps, "initialPosition">> &
-  Pick<CityWorldProps, "onPositionChange">) {
+function CityScene(props: CityWorldProps & { initialPosition: Position }) {
   return (
     <>
       <color attach="background" args={["#8dc5e8"]} />
@@ -259,9 +337,28 @@ function CityScene({
         CIRCLE
       </Text>
 
+      <DeliveryMarker
+        x={PICKUP.x}
+        z={PICKUP.z}
+        label="DELIVERY PICKUP"
+        color="#f59e0b"
+      />
+
+      {props.deliveryDestination && (
+        <DeliveryMarker
+          x={props.deliveryDestination.x}
+          z={props.deliveryDestination.z}
+          label="DELIVERY DESTINATION"
+          color="#22c55e"
+        />
+      )}
+
       <Player
-        initialPosition={initialPosition}
-        onPositionChange={onPositionChange}
+        initialPosition={props.initialPosition}
+        onPositionChange={props.onPositionChange}
+        deliveryDestination={props.deliveryDestination}
+        onInteractionAvailable={props.onInteractionAvailable}
+        onInteract={props.onInteract}
       />
     </>
   );
@@ -270,19 +367,22 @@ function CityScene({
 export default function CityWorld({
   initialPosition = { x: 0, y: 0, z: 0 },
   onPositionChange,
+  deliveryDestination = null,
+  onInteractionAvailable,
+  onInteract,
 }: CityWorldProps) {
   return (
     <Canvas
       shadows
-      camera={{
-        position: [0, 20, 24],
-        fov: 55,
-      }}
+      camera={{ position: [0, 20, 24], fov: 55 }}
       style={{ width: "100%", height: "100%" }}
     >
       <CityScene
         initialPosition={initialPosition}
         onPositionChange={onPositionChange}
+        deliveryDestination={deliveryDestination}
+        onInteractionAvailable={onInteractionAvailable}
+        onInteract={onInteract}
       />
     </Canvas>
   );
