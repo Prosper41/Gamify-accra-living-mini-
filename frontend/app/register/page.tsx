@@ -1,4 +1,3 @@
-
 "use client";
 
 import { FormEvent, useState } from "react";
@@ -57,7 +56,7 @@ export default function RegisterPage() {
       setError(
         err instanceof Error
           ? err.message
-          : "Something went wrong. Please try again."
+          : "Something went wrong. Please try again.",
       );
     } finally {
       setLoading(false);
@@ -88,9 +87,7 @@ export default function RegisterPage() {
           className="space-y-5 rounded-3xl border border-white/10 bg-white/5 p-8 shadow-2xl"
         >
           <div>
-            <h2 className="text-2xl font-bold">
-              Create your account
-            </h2>
+            <h2 className="text-2xl font-bold">Create your account</h2>
 
             <p className="mt-1 text-sm text-slate-400">
               Start your journey in Accra.
@@ -206,11 +203,7 @@ export default function RegisterPage() {
                 aria-pressed={showConfirmPassword}
                 className="shrink-0 cursor-pointer text-slate-400 transition hover:text-emerald-400"
               >
-                {showConfirmPassword ? (
-                  <EyeOff size={20} />
-                ) : (
-                  <Eye size={20} />
-                )}
+                {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
           </div>

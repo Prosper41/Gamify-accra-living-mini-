@@ -1,5 +1,4 @@
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 
 export interface LoginResponse {
   access: string;
@@ -14,7 +13,7 @@ export interface User {
 
 export async function loginUser(
   username: string,
-  password: string
+  password: string,
 ): Promise<LoginResponse> {
   const response = await fetch(`${API_URL}/api/auth/login/`, {
     method: "POST",
@@ -31,9 +30,7 @@ export async function loginUser(
   return response.json();
 }
 
-export async function getCurrentUser(
-  accessToken: string
-): Promise<User> {
+export async function getCurrentUser(accessToken: string): Promise<User> {
   const response = await fetch(`${API_URL}/api/auth/me/`, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -52,9 +49,7 @@ export interface RegisterPayload {
   password: string;
 }
 
-export async function registerUser(
-  payload: RegisterPayload
-): Promise<void> {
+export async function registerUser(payload: RegisterPayload): Promise<void> {
   const response = await fetch(`${API_URL}/api/auth/register/`, {
     method: "POST",
     headers: {

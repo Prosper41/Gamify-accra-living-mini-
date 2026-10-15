@@ -13,7 +13,10 @@ import {
 } from "lucide-react";
 
 import { loginUser } from "@/lib/api/auth";
-import { saveAccessToken } from "@/lib/auth/session";
+import {
+  saveAccessToken,
+  saveRefreshToken,
+} from "@/lib/auth/session";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -39,14 +42,16 @@ export default function LoginPage() {
     try {
       const tokens = await loginUser(username.trim(), password);
 
+      // Save both JWT tokens for authentication and renewal.
       saveAccessToken(tokens.access);
+      saveRefreshToken(tokens.refresh);
 
       router.replace("/game");
     } catch (err) {
       setError(
         err instanceof Error
           ? err.message
-          : "Login failed. Please try again."
+          : "Login failed. Please try again.",
       );
     } finally {
       setLoading(false);
@@ -121,17 +126,14 @@ export default function LoginPage() {
             </label>
 
             <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-[#101e27] px-4">
-              <LockKeyhole
-                size={18}
-                className="shrink-0 text-slate-400"
-              />
+              <LockKeyhole size={18} className="shrink-0 text-slate-400" />
 
               <input
                 id="password"
                 name="password"
                 type={showPassword ? "text" : "password"}
                 value={password}
-                onChange={(event) => setPassword(event.target.value)}
+                onChange={(event) => setPassword((event.target as HTMLInputElement).value)}
                 required
                 autoComplete="current-password"
                 placeholder="Enter your password"
@@ -141,17 +143,11 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => setShowPassword((prev) => !prev)}
-                aria-label={
-                  showPassword ? "Hide password" : "Show password"
-                }
+                aria-label={showPassword ? "Hide password" : "Show password"}
                 aria-pressed={showPassword}
                 className="shrink-0 cursor-pointer text-slate-400 transition hover:text-emerald-400"
               >
-                {showPassword ? (
-                  <EyeOff size={20} />
-                ) : (
-                  <Eye size={20} />
-                )}
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
           </div>
@@ -171,7 +167,6 @@ export default function LoginPage() {
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-400 py-4 font-bold text-[#08131a] transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loading ? "Signing in..." : "Enter the City"}
-
             {!loading && <ArrowRight size={18} />}
           </button>
 
