@@ -135,3 +135,21 @@ USE_TZ = True
 
 # Static files
 STATIC_URL = "static/"
+
+# Brevo SMTP Email Configuration
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+
+EMAIL_HOST = os.getenv("BREVO_SMTP_HOST", "smtp-relay.brevo.com")
+EMAIL_PORT = int(os.getenv("BREVO_SMTP_PORT", "587"))
+EMAIL_USE_TLS = True
+
+EMAIL_HOST_USER = os.getenv("BREVO_SMTP_LOGIN")
+EMAIL_HOST_PASSWORD = os.getenv("BREVO_SMTP_KEY")
+
+DEFAULT_FROM_EMAIL = os.getenv(
+    "DEFAULT_FROM_EMAIL",
+    "Accra Life Mini <your-verified-sender@example.com>",
+)
+
+# Frontend URL for password-reset links
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")

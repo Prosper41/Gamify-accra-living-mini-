@@ -42,7 +42,6 @@ export default function LoginPage() {
     try {
       const tokens = await loginUser(username.trim(), password);
 
-      // Save both JWT tokens for authentication and renewal.
       saveAccessToken(tokens.access);
       saveRefreshToken(tokens.refresh);
 
@@ -121,9 +120,18 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label htmlFor="password" className="mb-2 block text-sm">
-              Password
-            </label>
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <label htmlFor="password" className="block text-sm">
+                Password
+              </label>
+
+              <Link
+                href="/forgot-password"
+                className="text-sm font-semibold text-emerald-400 transition hover:text-emerald-300"
+              >
+                Forgot Password?
+              </Link>
+            </div>
 
             <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-[#101e27] px-4">
               <LockKeyhole size={18} className="shrink-0 text-slate-400" />
@@ -133,7 +141,7 @@ export default function LoginPage() {
                 name="password"
                 type={showPassword ? "text" : "password"}
                 value={password}
-                onChange={(event) => setPassword((event.target as HTMLInputElement).value)}
+                onChange={(event) => setPassword(event.target.value)}
                 required
                 autoComplete="current-password"
                 placeholder="Enter your password"
