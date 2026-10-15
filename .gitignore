@@ -26,3 +26,14 @@ build/
 .DS_Store
 Thumbs.db
 '@ | Set-Content .gitignore
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Local backups
+frontend-backup/
+frontend-backup-*/
+# Allow environment templates
+!backend/.env.example
+!frontend/.env.example
