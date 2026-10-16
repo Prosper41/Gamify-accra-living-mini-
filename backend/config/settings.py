@@ -136,8 +136,13 @@ USE_TZ = True
 # Static files
 STATIC_URL = "static/"
 
-# Brevo SMTP Email Configuration
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+# Use Brevo SMTP when credentials are available.
+# Otherwise, print emails in the terminal for local testing.
+EMAIL_BACKEND = (
+    "django.core.mail.backends.smtp.EmailBackend"
+    if os.getenv("BREVO_SMTP_LOGIN") and os.getenv("BREVO_SMTP_KEY")
+    else "django.core.mail.backends.console.EmailBackend"
+)
 
 EMAIL_HOST = os.getenv("BREVO_SMTP_HOST", "smtp-relay.brevo.com")
 EMAIL_PORT = int(os.getenv("BREVO_SMTP_PORT", "587"))
